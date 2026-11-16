@@ -124,139 +124,39 @@
     return;
   }
 
-  function sendResult() {
-    if (sent) return;
-    const text = textBox.value.trim();
-    if (!text) {
-      statusBox.textContent = '尚未辨識到文字，請先說英文。';
-      return;
-    }
+ 
+function sendResult() {
+  if (sent) return;
 
-    if (!window.opener || window.opener.closed) {
-      statusBox.textContent = '原本的學習 App 已關閉，無法傳回答案。';
-      return;
-    }
+  const text = textBox.value.trim();
 
-    window.opener.postMessage({
-      type: 'SPEECH_TEXT_RESULT',
-      answerNumber: answerNumber,
-      text: text
-    }, parentOrigin);
-
-    sent = true;
-    statusBox.textContent = '✓ 已傳回原本的學習 App，可以切回上一個頁面。';
-    mic.disabled = true;
-    returnButton.disabled = true;
+  if (!text) {
+    statusBox.textContent = '尚未辨識到文字，請先說英文。';
+    return;
   }
 
-  function startListening() {
-    if (isListening || sent) return;
-
-    recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    finalTranscript = '';
-    mic.classList.add('active');
-    mic.textContent = '🔴 正在聆聽，放開停止';
-    statusBox.textContent = '請開始說英文……';
-
-    recognition.onstart = () => {
-      isListening = true;
-    };
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      let finalPart = '';
-
-      for (let i = 0; i < event.results.length; i++) {
-        const part = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalPart += part;
-        else interim += part;
-      }
-
-      finalTranscript = finalPart.trim();
-      textBox.value = [finalTranscript, interim.trim()]
-        .filter(Boolean).join(' ');
-      statusBox.textContent = interim
-        ? '正在辨識英文……'
-        : '已辨識到部分內容';
-    };
-
-    recognition.onerror = (event) => {
-      statusBox.textContent = '語音辨識錯誤：' + event.error;
-    };
-
-    recognition.onend = () => {
-      isListening = false;
-      mic.classList.remove('active');
-      mic.textContent = '🎤 按住說英文';
-      if (!sent && textBox.value.trim()) {
-        statusBox.textContent = '辨識完成，正在傳回原本的學習 App……';
-        sendResult();
-      }
-    };
-
-    try {
-      recognition.start();
-    } catch (error) {
-      mic.classList.remove('active');
-      mic.textContent = '🎤 按住說英文';
-      statusBox.textContent = '無法啟動語音辨識：' + error.message;
-    }
+  if (!window.opener || window.opener.closed) {
+    statusBox.textContent = '原本的學習 App 已關閉，無法傳回答案。';
+    return;
   }
 
-  function stopListening() {
-    if (recognition && isListening) {
-      recognition.stop();
-    }
-  }
+  window.opener.postMessage({
+    type: 'SPEECH_TEXT_RESULT',
+    answerNumber: answerNumber,
+    text: text
+  }, parentOrigin);
 
-  mic.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-    pointerHeld = true;
-    try { mic.setPointerCapture(event.pointerId); } catch (e) {}
-    startListening();
-  });
+  sent = true;
+  statusBox.textContent = '✓ 已傳回答案，正在返回學習 App……';
+  mic.disabled = true;
+  returnButton.disabled = true;
 
-  mic.addEventListener('pointerup', (event) => {
-    event.preventDefault();
-    pointerHeld = false;
-    stopListening();
-  });
+  // 稍微延遲，讓原本的 App 有時間接收文字
+  setTimeout(() => {
+    window.close();
+  }, 500);
+}
 
-  mic.addEventListener('pointercancel', () => {
-    pointerHeld = false;
-    stopListening();
-  });
-
-  mic.addEventListener('lostpointercapture', () => {
-    if (pointerHeld) {
-      pointerHeld = false;
-      stopListening();
-    }
-  });
-
-  mic.addEventListener('contextmenu', event => event.preventDefault());
-
-  clearButton.addEventListener('click', () => {
-    if (isListening) stopListening();
-    textBox.value = '';
-    finalTranscript = '';
-    sent = false;
-    mic.disabled = false;
-    returnButton.disabled = false;
-    statusBox.textContent = '文字已清除';
-  });
-
-  returnButton.addEventListener('click', () => {
-    if (isListening) {
-      stopListening();
-      statusBox.textContent = '正在結束辨識，請稍候再按一次完成。';
-      return;
-    }
-    sendResult();
   });
 })();
 </script>
