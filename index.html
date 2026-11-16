@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>English Speaking Practice</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f7f7f2;
+      color: #26352c;
+      margin: 0;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 560px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 5px 25px #0000000d;
+    }
+    h1 { font-size: 24px; }
+    .sub { color: #778078; font-size: 14px; }
+    .question {
+      background: #f1f4ec;
+      padding: 16px;
+      border-radius: 12px;
+      line-height: 1.6;
+      margin: 20px 0;
+    }
+    .mic {
+      width: 100%;
+      min-height: 76px;
+      border: 0;
+      border-radius: 16px;
+      background: #52785c;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+    }
+    .mic.active { background: #c65e4d; }
+    .status {
+      text-align: center;
+      margin: 14px 0;
+      color: #66736a;
+      font-size: 14px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 14px;
+      border: 1px solid #dce2da;
+      border-radius: 12px;
+      font-size: 16px;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .clear {
+      margin-top: 12px;
+      padding: 12px 18px;
+      border: 1px solid #dce2da;
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+    }
+    .note {
+      font-size: 12px;
+      color: #818981;
+      line-height: 1.6;
+      margin-top: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>English Speaking Practice</h1>
+    <div class="sub">Speech-to-Text Test · Day 01</div>
+
+    <section class="question">
+      <strong>Question 1</strong>
+      <p>Could you tell me your name and reservation number?</p>
+    </section>
+
+    <button class="mic" id="micButton" type="button">
+      🎙 按住說英文
+    </button>
+
+    <div class="status" id="status">
+      準備就緒，按住麥克風開始說話
+    </div>
+
+    <label for="answer"><strong>英文辨識結果</strong></label>
+    <textarea id="answer"
+      placeholder="Your English will appear here..."></textarea>
+
+    <button class="clear" id="clearButton" type="button">
+      清除文字
+    </button>
+
+    <p class="note">
+      請使用支援語音辨識的瀏覽器，並允許麥克風權限。
+      語音辨識結果可能需要自行校正。
+      本測試頁不儲存或上傳錄音檔。
+    </p>
+  </main>
+
+  <script>
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    const micButton = document.getElementById("micButton");
+    const statusBox = document.getElementById("status");
+    const answerBox = document.getElementById("answer");
+    const clearButton = document.getElementById("clearButton");
+
+    let recognition = null;
+    let isListening = false;
+    let finalText = "";
+    let pointerIsDown = false;
+
+    if (!SpeechRecognition) {
+      statusBox.textContent =
+        "此瀏覽器不支援語音辨識，請改用其他瀏覽器或鍵盤聽寫。";
+      micButton.disabled = true;
+      micButton.textContent = "語音辨識不支援";
+    }
+
+    function startListening() {
+      if (!SpeechRecognition || isListening) return;
+
+      try {
+        recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        finalText = answerBox.value.trim();
+
+        if (finalText) finalText += " ";
+
+        recognition.onstart = () => {
+          isListening = true;
+          micButton.classList.add("active");
+          micButton.textContent = "🔴 正在聆聽，放開停止";
+          statusBox.textContent = "請開始說英文……";
+        };
+
+        recognition.onresult = (event) => {
+          let confirmed = "";
+          let temporary = "";
+
+          for (let i = 0; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+
+            if (event.results[i].isFinal) {
+              confirmed += transcript + " ";
+            } else {
+              temporary += transcript;
+            }
+          }
+
+          const separator = finalText ? " " : "";
+          answerBox.value =
+            finalText + separator + confirmed + temporary;
+
+          statusBox.textContent =
+            temporary ? "正在辨識英文……" : "已辨識部分內容";
+        };
+
+        recognition.onerror = (event) => {
+          statusBox.textContent =
+            "辨識錯誤：" + event.error;
+        };
+
+        recognition.onend = () => {
+          isListening = false;
+          micButton.classList.remove("active");
+          micButton.textContent = "🎙 按住說英文";
+          statusBox.textContent =
+            "辨識完成！可以修改文字或再次練習。";
+        };
+
+        recognition.start();
+
+      } catch (error) {
+        isListening = false;
+        statusBox.textContent =
+          "無法啟動：" + error.message;
+      }
+    }
+
+    function stopListening() {
+      if (recognition && isListening) {
+        recognition.stop();
+      }
+    }
+
+    micButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      pointerIsDown = true;
+
+      try {
+        micButton.setPointerCapture(event.pointerId);
+      } catch (e) {}
+
+      startListening();
+    });
+
+    micButton.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      pointerIsDown = false;
+      stopListening();
+    });
+
+    micButton.addEventListener("pointercancel", () => {
+      pointerIsDown = false;
+      stopListening();
+    });
+
+    micButton.addEventListener("lostpointercapture", () => {
+      if (pointerIsDown) {
+        pointerIsDown = false;
+        stopListening();
+      }
+    });
+
+    micButton.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
+
+    clearButton.addEventListener("click", () => {
+      answerBox.value = "";
+      finalText = "";
+      statusBox.textContent = "文字已清除";
+    });
+  </script>
+</body>
+</html>
