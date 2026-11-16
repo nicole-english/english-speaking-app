@@ -7,45 +7,104 @@
   <title>English Speaking - Voice Input</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
-      margin: 0; padding: 22px 16px;
-      background: #f5f7f2; color: #34443b;
+      margin: 0;
+      padding: 22px 16px;
+      background: #f5f7f2;
+      color: #34443b;
       font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
     }
+
     main {
-      max-width: 560px; margin: 24px auto; padding: 24px;
-      background: #fff; border-radius: 18px;
+      max-width: 560px;
+      margin: 24px auto;
+      padding: 24px;
+      background: #fff;
+      border-radius: 18px;
       box-shadow: 0 3px 18px #0000000c;
     }
+
     h1 { font-size: 23px; margin: 0 0 8px; }
     .muted { color: #7b887e; font-size: 13px; line-height: 1.6; }
+
     .question {
-      background: #f1f4ec; border-radius: 12px;
-      padding: 14px; margin: 20px 0; line-height: 1.6;
+      background: #f1f4ec;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 20px 0;
+      line-height: 1.6;
     }
+
     #mic {
-      width: 100%; min-height: 76px; border: 0; border-radius: 15px;
-      background: #526b55; color: white; font-size: 19px;
-      font-weight: 650; touch-action: none; user-select: none;
-      -webkit-user-select: none; cursor: pointer;
+      width: 100%;
+      min-height: 76px;
+      border: 0;
+      border-radius: 15px;
+      background: #526b55;
+      color: white;
+      font-size: 19px;
+      font-weight: 650;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
     }
+
     #mic.active { background: #bd604e; }
     #mic:disabled { opacity: .55; }
-    #status { min-height: 26px; margin: 14px 0; text-align: center; font-size: 14px; }
+
+    #status {
+      min-height: 26px;
+      margin: 14px 0;
+      text-align: center;
+      font-size: 14px;
+    }
+
     textarea {
-      display: block; width: 100%; min-height: 155px; margin-top: 8px;
-      padding: 13px; border: 1px solid #dce3da; border-radius: 10px;
-      font: inherit; font-size: 16px; line-height: 1.6;
+      display: block;
+      width: 100%;
+      min-height: 155px;
+      margin-top: 8px;
+      padding: 13px;
+      border: 1px solid #dce3da;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.6;
     }
-    .actions { display: flex; gap: 9px; margin-top: 12px; }
+
+    .actions {
+      display: flex;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
     .actions button {
-      flex: 1; border: 0; border-radius: 9px; padding: 12px;
-      background: #edf2eb; color: #526b55; font-size: 14px;
+      flex: 1;
+      border: 0;
+      border-radius: 9px;
+      padding: 12px;
+      background: #edf2eb;
+      color: #526b55;
+      font-size: 14px;
+      cursor: pointer;
     }
-    #return { background: #526b55; color: #fff; }
-    .small { font-size: 12px; color: #879087; line-height: 1.6; margin-top: 17px; }
+
+    #return {
+      background: #526b55;
+      color: #fff;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #879087;
+      line-height: 1.6;
+      margin-top: 17px;
+    }
   </style>
 </head>
+
 <body>
 <main>
   <h1>🎙 English Voice Input</h1>
@@ -57,10 +116,14 @@
   </section>
 
   <button id="mic" type="button">🎤 按住說英文</button>
+
   <div id="status" role="status">準備就緒</div>
 
   <label for="transcript"><strong>即時辨識結果</strong></label>
-  <textarea id="transcript" placeholder="Your English will appear here..."></textarea>
+  <textarea
+    id="transcript"
+    placeholder="Your English will appear here..."
+  ></textarea>
 
   <div class="actions">
     <button id="clear" type="button">清除文字</button>
@@ -68,32 +131,25 @@
   </div>
 
   <p class="small">
-    語音辨識語言：English (United States)。本頁不錄製或保存音檔。
-    辨識結果可能需要自行校正。若瀏覽器不支援語音辨識，請使用原 App 的文字輸入功能。
+    語音辨識語言：English (United States)。
+    本頁不錄製或保存音檔。
+    辨識結果可能需要自行校正。
+    若瀏覽器不支援語音辨識，請使用原 App 的文字輸入功能。
   </p>
 </main>
 
 <script>
 (() => {
   const params = new URLSearchParams(location.search);
+
   const parentOrigin = params.get('parentOrigin');
   const answerNumber = Number(params.get('answerNumber'));
+
   const mic = document.getElementById('mic');
   const statusBox = document.getElementById('status');
   const textBox = document.getElementById('transcript');
   const returnButton = document.getElementById('return');
   const clearButton = document.getElementById('clear');
-
-  function isAllowedParentOrigin(value) {
-    try {
-      const url = new URL(value);
-      return url.protocol === 'https:' &&
-        (url.hostname === 'script.google.com' ||
-         url.hostname.endsWith('.googleusercontent.com'));
-    } catch (error) {
-      return false;
-    }
-  }
 
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -101,63 +157,261 @@
   let recognition = null;
   let isListening = false;
   let pointerHeld = false;
-  let finalTranscript = '';
   let sent = false;
+  let finalTranscript = '';
 
+  // 確認原本學習 App 的網址
+  function isAllowedParentOrigin(value) {
+    try {
+      const url = new URL(value);
+
+      return url.protocol === 'https:' &&
+        (
+          url.hostname === 'script.google.com' ||
+          url.hostname.endsWith('.googleusercontent.com')
+        );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // 顯示目前正在回答第幾題
   document.getElementById('questionTitle').textContent =
     [1, 2, 3].includes(answerNumber)
       ? 'Question ' + answerNumber
       : 'English voice input';
 
-  if (!parentOrigin || !isAllowedParentOrigin(parentOrigin) ||
-      ![1, 2, 3].includes(answerNumber) || !window.opener) {
+  // 檢查開啟來源
+  if (
+    !parentOrigin ||
+    !isAllowedParentOrigin(parentOrigin) ||
+    ![1, 2, 3].includes(answerNumber) ||
+    !window.opener
+  ) {
     statusBox.textContent =
-      '無法確認原本的學習 App。請關閉此頁，從原 App 的語音按鈕重新開啟。';
+      '無法確認原本的學習 App。請從原 App 的語音按鈕重新開啟。';
+
     mic.disabled = true;
     return;
   }
 
+  // 檢查瀏覽器是否支援語音辨識
   if (!SpeechRecognition) {
     statusBox.textContent =
-      '此瀏覽器不支援 Speech Recognition，請改用支援的瀏覽器或文字輸入。';
+      '此瀏覽器不支援語音辨識，請改用文字輸入。';
+
     mic.disabled = true;
     return;
   }
 
- 
-function sendResult() {
-  if (sent) return;
+  // 傳送答案並嘗試返回原頁面
+  function sendResult() {
+    if (sent) return;
 
-  const text = textBox.value.trim();
+    const text = textBox.value.trim();
 
-  if (!text) {
-    statusBox.textContent = '尚未辨識到文字，請先說英文。';
-    return;
+    if (!text) {
+      statusBox.textContent = '尚未辨識到文字，請先說英文。';
+      return;
+    }
+
+    if (!window.opener || window.opener.closed) {
+      statusBox.textContent =
+        '原本的學習 App 已關閉，無法傳回答案。';
+      return;
+    }
+
+    // 傳送辨識結果
+    window.opener.postMessage({
+      type: 'SPEECH_TEXT_RESULT',
+      answerNumber: answerNumber,
+      text: text
+    }, parentOrigin);
+
+    sent = true;
+
+    statusBox.textContent =
+      '✓ 已傳回答案，正在返回學習 App……';
+
+    mic.disabled = true;
+    returnButton.disabled = true;
+
+    // 嘗試切回原本學習 App
+    try {
+      window.opener.focus();
+    } catch (error) {}
+
+    // 延遲後嘗試關閉語音頁面
+    setTimeout(() => {
+      window.close();
+
+      // 若瀏覽器不允許關閉，提供手動返回提示
+      setTimeout(() => {
+        if (!window.closed) {
+          statusBox.textContent =
+            '✓ 答案已傳回！請手動切回原本的學習 App。';
+        }
+      }, 500);
+
+    }, 500);
   }
 
-  if (!window.opener || window.opener.closed) {
-    statusBox.textContent = '原本的學習 App 已關閉，無法傳回答案。';
-    return;
+  // 啟動語音辨識
+  function startListening() {
+    if (isListening || sent) return;
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    finalTranscript = '';
+
+    mic.classList.add('active');
+    mic.textContent = '🔴 正在聆聽，放開停止';
+
+    statusBox.textContent = '請開始說英文……';
+
+    recognition.onstart = () => {
+      isListening = true;
+    };
+
+    // 接收語音辨識結果
+    recognition.onresult = (event) => {
+      let interim = '';
+
+      // 從 finalIndex 開始，只累積本次新增的 final 結果
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
+        const part = event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+          finalTranscript += part + ' ';
+        } else {
+          interim += part;
+        }
+      }
+
+      textBox.value = [
+        finalTranscript.trim(),
+        interim.trim()
+      ].filter(Boolean).join(' ');
+
+      statusBox.textContent = interim
+        ? '正在辨識英文……'
+        : '已辨識到部分內容';
+    };
+
+    recognition.onerror = (event) => {
+      statusBox.textContent =
+        '語音辨識錯誤：' + event.error;
+    };
+
+    // 語音辨識結束
+    recognition.onend = () => {
+      isListening = false;
+
+      mic.classList.remove('active');
+      mic.textContent = '🎤 按住說英文';
+
+      if (!sent && textBox.value.trim()) {
+        statusBox.textContent =
+          '辨識完成，正在傳回原本的學習 App……';
+
+        sendResult();
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (error) {
+      mic.classList.remove('active');
+      mic.textContent = '🎤 按住說英文';
+
+      statusBox.textContent =
+        '無法啟動語音辨識：' + error.message;
+    }
   }
 
-  window.opener.postMessage({
-    type: 'SPEECH_TEXT_RESULT',
-    answerNumber: answerNumber,
-    text: text
-  }, parentOrigin);
+  // 停止語音辨識
+  function stopListening() {
+    if (recognition && isListening) {
+      recognition.stop();
+    }
+  }
 
-  sent = true;
-  statusBox.textContent = '✓ 已傳回答案，正在返回學習 App……';
-  mic.disabled = true;
-  returnButton.disabled = true;
+  // 按住麥克風開始
+  mic.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
 
-  // 稍微延遲，讓原本的 App 有時間接收文字
-  setTimeout(() => {
-    window.close();
-  }, 500);
-}
+    pointerHeld = true;
 
+    try {
+      mic.setPointerCapture(event.pointerId);
+    } catch (error) {}
+
+    startListening();
   });
+
+  // 放開麥克風停止
+  mic.addEventListener('pointerup', (event) => {
+    event.preventDefault();
+
+    pointerHeld = false;
+
+    stopListening();
+  });
+
+  mic.addEventListener('pointercancel', () => {
+    pointerHeld = false;
+    stopListening();
+  });
+
+  mic.addEventListener('lostpointercapture', () => {
+    if (pointerHeld) {
+      pointerHeld = false;
+      stopListening();
+    }
+  });
+
+  mic.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+  });
+
+  // 清除文字
+  clearButton.addEventListener('click', () => {
+    if (isListening) {
+      stopListening();
+    }
+
+    textBox.value = '';
+    finalTranscript = '';
+    sent = false;
+
+    mic.disabled = false;
+    returnButton.disabled = false;
+
+    statusBox.textContent = '文字已清除';
+  });
+
+  // 完成並傳回答案
+  returnButton.addEventListener('click', () => {
+    if (isListening) {
+      stopListening();
+
+      statusBox.textContent =
+        '正在結束辨識，請稍候……';
+
+      return;
+    }
+
+    sendResult();
+  });
+
 })();
 </script>
 </body>
